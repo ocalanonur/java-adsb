@@ -31,16 +31,15 @@ public class AdsbDecoderTest {
             0x45,(byte) 0x44,(byte) 0xb7,(byte) 0xd0, 0x18, 0x20,   //ME
             (byte) 0xb1, 0x72,(byte) 0xa2,                          //PI
 
-            /*
             0x1a, 0x33,                                             //esb
             0x04,(byte) 0xfe,(byte) 0xce, 0x00, 0x00, 0x00,         //timestemp
             0x1d,                                                   //signal Strength
             (byte) 0x8D,                                            //DF, CA
-            0x4b,(byte) 0xcd,(byte) 0xf6,                           //ICAO
-            0x23,                                                   //TC, CA
-            0x4d,(byte) 0x84,(byte) 0xf1,(byte) 0x82, 0x08, 0x20,   //ME
-            0x24,(byte) 0xba,(byte) 0xe2,                           //PI
-            */
+            0x4b,(byte) 0xa1,(byte) 0x89,                           //ICAO
+            (byte) 0xf8,                                            //TC, CA
+            0x03, 0x00, 0x02, 0x00, 0x40, 0x0e,                     //ME
+            0x29,(byte) 0x0d,(byte) 0x24,                           //PI
+
     };
 
     @Test
@@ -71,14 +70,13 @@ public class AdsbDecoderTest {
         assertEquals("Heavy (> 300000 lbs)",id_msg.getCategoryDescription());
         assertEquals("QTR74A  ",String.valueOf(id_msg.getIdentity()));
 
-        /*
         assertEquals(29, msg.get(2).getSignalStrength());
-        assertEquals(5492189429760L, msg.get(2).getTimeStemp());
+        assertEquals(5492424310784L, msg.get(2).getTimeStemp());
         assertEquals(17, msg.get(2).getDownlinkFormat());
         assertEquals("4ba189", tools.toHexString(msg.get(2).getIcao24()));
-        assertEquals(ModeSReply.subtype.ADSB_STATUS_V0,msg.get(2).getType());
+        assertEquals(ModeSReply.subtype.ADSB_AIRBORN_STATUS_V2,msg.get(2).getType());
         assertEquals("290d24", tools.toHexString(msg.get(2).getParity()));
-        */
+
 
     }
 }
