@@ -324,6 +324,14 @@ public class ModeSDecoder {
 		return decode(new ModeSReply(raw_message, noCRC));
 	}
 
+	/*
+	 * Beast decode Method
+	 */
+
+	public ModeSReply decode(byte[] raw_message, long timeStemp, int signalStrength) throws BadFormatException, UnspecifiedFormatError {
+		return decode(new ModeSReply(raw_message, timeStemp, signalStrength));
+	}
+
 	/**
 	 * Check whether a ModeSReply is an airborne position (of any version), i.e., it
 	 * is of type {@link AirbornePositionV0Msg}, {@link AirbornePositionV1Msg} or {@link AirbornePositionV2Msg}

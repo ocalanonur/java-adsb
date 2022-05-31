@@ -25,7 +25,7 @@ import java.util.Arrays;
 
 /**
  * Decoder for Mode S replies
- * @author Matthias Schäfer (schaefer@opensky-network.org)
+ * @author Matthias SchÃ¤fer (schaefer@opensky-network.org)
  */
 public class ModeSReply implements Serializable {
 	private static final long serialVersionUID = 5369519167589262290L;
@@ -39,6 +39,12 @@ public class ModeSReply implements Serializable {
 	private byte[] payload; // 3 or 10 bytes
 	private byte[] parity; // 3 bytes
 	private boolean noCRC;
+
+	/*
+	 * Beast Attributes
+	 */
+	private long timeStemp;
+	private int signalStrength;
 
 	/**
 	 * Indicator set by all specializations of this class to tell
@@ -194,17 +200,17 @@ public class ModeSReply implements Serializable {
 		setType(subtype.MODES_REPLY);
 	}
 
-    /**
-     * We assume the following message format:<br>
-     * | DF (5) | FF (3) | Payload (24/80) | PI/AP (24) |
-     *
-     * @param raw_message Mode S message as byte array
-     * @throws BadFormatException if message has invalid length or payload does
-     * not match specification or parity has invalid length
-     */
-    public ModeSReply (byte[] raw_message) throws BadFormatException {
-        this(raw_message, false);
-    }
+	/**
+	 * We assume the following message format:<br>
+	 * | DF (5) | FF (3) | Payload (24/80) | PI/AP (24) |
+	 *
+	 * @param raw_message Mode S message as byte array
+	 * @throws BadFormatException if message has invalid length or payload does
+	 * not match specification or parity has invalid length
+	 */
+	public ModeSReply (byte[] raw_message) throws BadFormatException {
+		this(raw_message, false);
+	}
 
 	/**
 	 * We assume the following message format:<br>
@@ -231,6 +237,64 @@ public class ModeSReply implements Serializable {
 		this(tools.hexStringToByteArray(raw_message), noCRC);
 	}
 
+	/*
+	 * Beast Constructors
+	 */
+
+	public ModeSReply (byte[] reply, boolean noCRC, long timeStemp, int signalStrength) throws BadFormatException {
+		// check format invariants
+		this.noCRC = noCRC;
+		this.timeStemp = timeStemp;
+		this.signalStrength = signalStrength;
+
+		if (reply.length != 7 && reply.length != 14) // initial test
+			throw new BadFormatException("Raw message has an invalid length of "+reply.length);
+
+		downlink_format = reply[0];
+		first_field = (byte) (downlink_format & 0x7);
+		downlink_format = (byte) (downlink_format>>>3 & 0x1F);
+
+		if (reply.length != getExpectedLength(downlink_format)) {
+			throw new BadFormatException(
+					String.format("Downlink format %d has length %d, but only %d bytes provided.",
+							downlink_format, getExpectedLength(downlink_format), reply.length));
+		}
+
+		// extract payload
+		payload = Arrays.copyOfRange(reply, 1, reply.length-3);
+
+		// extract parity field
+		parity = Arrays.copyOfRange(reply,reply.length-3, reply.length);
+
+		// extract ICAO24 address
+		icao24 = new byte[3];
+		switch (downlink_format) {
+			case 0: // Short air-air (ACAS)
+			case 4: // Short altitude reply
+			case 5: // Short identity reply
+			case 16: // Long air-air (ACAS)
+			case 20: // Long Comm-B, altitude reply
+			case 21: // Long Comm-B, identity reply
+			case 24: // Long Comm-D (ELM)
+				icao24 = noCRC ? parity : tools.xor(calcParity(), parity);
+				break;
+
+			case 11: // all call replies
+			case 17: case 18: // Extended squitter
+				System.arraycopy(payload, 0, icao24, 0, 3);
+				break;
+			default: // unkown downlink format
+				// throw exception
+				throw new BadFormatException(
+						String.format("Invalid downlink format %d detected.", downlink_format));
+		}
+
+		setType(subtype.MODES_REPLY);
+	}
+	public ModeSReply (byte[] raw_message, long timeStemp, int signalStrength) throws BadFormatException {
+		this(raw_message, false, timeStemp, signalStrength);
+	}
+
 	/**
 	 * Copy constructor for subclasses
 	 *
@@ -244,6 +308,11 @@ public class ModeSReply implements Serializable {
 		parity = reply.parity;
 		type = reply.type;
 		noCRC = reply.noCRC;
+		/*
+		 * Beast Attributes
+		 */
+		timeStemp = reply.timeStemp;
+		signalStrength = reply.signalStrength;
 	}
 
 	/**
@@ -291,7 +360,7 @@ public class ModeSReply implements Serializable {
 
 	/**
 	 * @return payload as 3- or 10-byte array containing the Mode S
-	 * reply without the first and the last three bytes. 
+	 * reply without the first and the last three bytes.
 	 */
 	public byte[] getPayload() {
 		return payload;
@@ -302,6 +371,14 @@ public class ModeSReply implements Serializable {
 	 */
 	public byte[] getParity() {
 		return parity;
+	}
+
+	public long getTimeStemp() {
+		return timeStemp;
+	}
+
+	public int getSignalStrength(){
+		return signalStrength;
 	}
 
 	/**
