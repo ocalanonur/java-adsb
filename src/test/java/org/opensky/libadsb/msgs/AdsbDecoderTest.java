@@ -40,12 +40,20 @@ public class AdsbDecoderTest {
             0x03, 0x00, 0x02, 0x00, 0x40, 0x0e,                     //ME
             0x29,(byte) 0x0d,(byte) 0x24,                           //PI
 
+            0x1a, 0x33,
+            0x04,(byte) 0xfe,(byte) 0xce, 0x00, 0x00, 0x00,
+            0x1d,
+            (byte) 0x8D,
+            0x4b,(byte) 0xa9,(byte) 0x99,
+            (byte) 0x00,
+            (byte) 0xb5, 0x00, 0x00, 0x00, 0x00, 0x00,
+            (byte) 0xb4,(byte) 0x62,(byte) 0x94,
     };
 
     @Test
     public void test_adsb_decoder() throws BadFormatException, UnspecifiedFormatError {
 
-        ADSBDecoder decoder = new ADSBDecoder();
+        ADSBDecoder decoder = new ADSBDecoder(ADSBDecoder.SWSEnum.on);
         List<ModeSReply> msg = decoder.decode(IS_MSG);
 
         assertEquals(27, msg.get(0).getSignalStrength());
